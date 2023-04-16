@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:cherry_toast/cherry_toast.dart';
 import 'package:crafts_men/pages/admin/admin_home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -373,17 +372,17 @@ class _AddCraftsMenState extends State<AddCraftsMen> {
                             user!.updateProfile(displayName: role);
 
                             if (userCredential.user != null) {
+                              String uid = userCredential.user!.uid;
+
                               DatabaseReference userRef = FirebaseDatabase
                                   .instance
                                   .reference()
                                   .child('craftsMen')
-                                  .child('$type');
+                                  .child(uid);
                               String? id = userRef.push().key;
 
-                              String uid = userCredential.user!.uid;
-                              int dt = DateTime.now().millisecondsSinceEpoch;
 
-                              await userRef.child(id!).set({
+                              await userRef.set({
                                 'name': name,
                                 'imageUrl': imageUrl,
                                 'email': email,
@@ -430,6 +429,7 @@ class _AddCraftsMenState extends State<AddCraftsMen> {
                         child: Text('حفظ'),
                       ),
                     ),
+                    SizedBox(height: 10.h,),
                   ],
                 ),
               ),

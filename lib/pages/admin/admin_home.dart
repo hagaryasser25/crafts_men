@@ -30,6 +30,7 @@ class _AdminHomeState extends State<AdminHome>
   late FirebaseDatabase database;
   late FirebaseApp app;
   List<CraftsMenV> menList = [];
+  List<CraftsMenV> searchList = [];
   List<String> keyslist = [];
   List<CraftsMenV> menList2 = [];
   List<String> keyslist3 = [];
@@ -45,7 +46,6 @@ class _AdminHomeState extends State<AdminHome>
     fetchComplains();
   }
 
-  @override
   void fetchComplains() async {
     app = await Firebase.initializeApp();
     database = FirebaseDatabase(app: app);
@@ -62,7 +62,7 @@ class _AdminHomeState extends State<AdminHome>
   void fetchTypes() async {
     app = await Firebase.initializeApp();
     database = FirebaseDatabase(app: app);
-    base = database.reference().child("craftsMen");
+    base = database.reference().child("craftsMen").child('U9OA7dGjutfudeZD21ZhfkfRucD2');
     base.onChildAdded.listen((event) {
       print(event.snapshot.value);
       CraftsMenV p = CraftsMenV.fromJson(event.snapshot.value);
@@ -73,15 +73,15 @@ class _AdminHomeState extends State<AdminHome>
     });
   }
 
-  @override
   void fetchCraftsMen() async {
     app = await Firebase.initializeApp();
     database = FirebaseDatabase(app: app);
-    base = database.reference().child("craftsMen").child("$dropdownValue");
+    base = database.reference().child("craftsMen");
     base.onChildAdded.listen((event) {
       print(event.snapshot.value);
       CraftsMenV p = CraftsMenV.fromJson(event.snapshot.value);
       menList.add(p);
+      searchList.add(p);
       keyslist.add(event.snapshot.key.toString());
       print(keyslist);
       setState(() {});
@@ -144,157 +144,166 @@ class _AdminHomeState extends State<AdminHome>
                 width: double.infinity,
                 height: 580.h,
                 child: TabBarView(controller: tabController, children: [
-                  Column(
-                    children: [
-                      Padding(
-                        padding:
-                            EdgeInsets.only(top: 20.h, right: 15.w, left: 15.w),
-                        child: DecoratedBox(
-                          decoration: ShapeDecoration(
-                            shape: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                  color: Color.fromARGB(255, 183, 183, 183),
-                                  width: 2.0),
-                            ),
-                          ),
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            underline: SizedBox(),
-
-                            // Step 3.
-                            value: dropdownValue,
-                            icon: Padding(
-                              padding: EdgeInsets.only(right: 5),
-                              child: Icon(Icons.arrow_drop_down,
-                                  color: Color.fromARGB(255, 119, 118, 118)),
-                            ),
-
-                            // Step 4.
-                            items: keyslist3.map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Padding(
-                                  padding: EdgeInsets.only(
-                                    right: 5,
-                                  ),
-                                  child: Text(
-                                    value,
-                                    style: TextStyle(
-                                        fontSize: 18,
-                                        color:
-                                            Color.fromARGB(255, 119, 118, 118)),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                            // Step 5.
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                dropdownValue = newValue!;
-                                menList.clear();
-                                fetchCraftsMen();
-                              });
-                            },
-                          ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height: 10.h,
                         ),
-                      ),
-                      Container(
-                        width: double.infinity,
-                        height: 300,
-                        child: StaggeredGridView.countBuilder(
-                          padding: EdgeInsets.only(
-                            top: 20.h,
-                            left: 15.w,
-                            right: 15.w,
-                            bottom: 15.h,
+                        TextField(
+                          style: const TextStyle(
+                            fontSize: 15.0,
                           ),
-                          crossAxisCount: 6,
-                          itemCount: menList.length,
-                          itemBuilder: (context, index) {
-                            return Card(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15.0),
-                              ),
-                              child: Column(children: [
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    top: 10.h,
-                                  ),
-                                  child: CircleAvatar(
-                                    radius: 37,
-                                    backgroundImage: NetworkImage(
-                                        '${menList[index].imageUrl.toString()}'),
-                                  ),
-                                ),
-                                Text(
-                                  '${menList[index].name.toString()}',
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600),
-                                ),
-                                Text('${menList[index].email.toString()}'),
-                                SizedBox(
-                                  height: 5.h,
-                                ),
-                                Text('${menList[index].password.toString()}'),
-                                SizedBox(
-                                  height: 5.h,
-                                ),
-                                Text(
-                                    '${menList[index].phoneNumber.toString()}'),
-                                InkWell(
-                                  onTap: () async {
-                                    Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (BuildContext context) =>
-                                                super.widget));
-                                    FirebaseDatabase.instance
-                                        .reference()
-                                        .child('craftsMen')
-                                        .child('$dropdownValue')
-                                        .child('${menList[index].id}')
-                                        .remove();
-                                  },
-                                  child: Icon(Icons.delete,
-                                      color:
-                                          Color.fromARGB(255, 122, 122, 122)),
-                                )
-                              ]),
-                            );
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: 'بحث عن حرفة',
+                          ),
+                          onChanged: (char) {
+                            setState(() {
+                              if (char.isEmpty) {
+                                setState(() {
+                                  menList = searchList;
+                                });
+                              } else {
+                                menList = [];
+                                for (CraftsMenV model in searchList) {
+                                  if (model.type!.contains(char)) {
+                                    menList.add(model);
+                                  }
+                                }
+                                setState(() {});
+                              }
+                            });
                           },
-                          staggeredTileBuilder: (int index) =>
-                              new StaggeredTile.count(3, index.isEven ? 3 : 3),
-                          mainAxisSpacing: 30.0,
-                          crossAxisSpacing: 5.0,
                         ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Align(
-                            alignment: Alignment.bottomLeft,
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.pushNamed(
-                                    context, AddCraftsMen.routeName);
-                              },
-                              child: ClipPath(
-                                clipper: StarClipper(10),
-                                child: Container(
-                                  color: Colors.deepPurple,
-                                  height: 80,
-                                  width: 80,
-                                  child: Center(
-                                      child:
-                                          Icon(Icons.add, color: Colors.white)),
+                        SizedBox(
+                          height: 20.h,
+                        ),
+                        ConstrainedBox(
+                            constraints: BoxConstraints.tightFor(
+                                width: double.infinity, height: 50.h),
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                primary:
+                                    const Color.fromARGB(255, 211, 211, 211),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(25), // <-- Radius
                                 ),
                               ),
+                              child: Text(
+                                'أضافة اصحاب الحرف',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.deepPurple,
+                                  fontFamily: 'Cairo',
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.push(context,
+                                    MaterialPageRoute(builder: (context) {
+                                  return AddCraftsMen();
+                                }));
+                              },
+                            )),
+                        Expanded(
+                          child: Container(
+                            width: double.infinity,
+                            child: StaggeredGridView.countBuilder(
+                              padding: EdgeInsets.only(
+                                top: 20.h,
+                                left: 15.w,
+                                right: 15.w,
+                                bottom: 15.h,
+                              ),
+                              crossAxisCount: 6,
+                              itemCount: menList.length,
+                              itemBuilder: (context, index) {
+                                return Card(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15.0),
+                                  ),
+                                  child: Column(children: [
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                        top: 10.h,
+                                      ),
+                                      child: CircleAvatar(
+                                        radius: 37,
+                                        backgroundImage: NetworkImage(
+                                            '${menList[index].imageUrl.toString()}'),
+                                      ),
+                                    ),
+                                    Text(
+                                      '${menList[index].name.toString()}',
+                                      style: TextStyle(
+                                          overflow: TextOverflow.ellipsis,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    FittedBox(
+                                      fit: BoxFit.fitWidth,
+                                      child: Text(
+                                        '${menList[index].email.toString()}',
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 5.h,
+                                    ),
+                                    FittedBox(
+                                      fit: BoxFit.fitWidth,
+                                      child: Text(
+                                        'كلمة المرور : ${menList[index].password.toString()}',
+                                        style: TextStyle(
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 5.h,
+                                    ),
+                                    FittedBox(
+                                      fit: BoxFit.fitWidth,
+                                      child: Text(
+                                        'الهاتف : ${menList[index].phoneNumber.toString()}',
+                                        style: TextStyle(
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ),
+                                    InkWell(
+                                      onTap: () async {
+                                        Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder:
+                                                    (BuildContext context) =>
+                                                        super.widget));
+                                        FirebaseDatabase.instance
+                                            .reference()
+                                            .child('craftsMen')
+                                            .child('${menList[index].uid}')
+                                            .remove();
+                                      },
+                                      child: Icon(Icons.delete,
+                                          color: Color.fromARGB(
+                                              255, 122, 122, 122)),
+                                    )
+                                  ]),
+                                );
+                              },
+                              staggeredTileBuilder: (int index) =>
+                                  new StaggeredTile.count(
+                                      3, index.isEven ? 3 : 3),
+                              mainAxisSpacing: 40.0,
+                              crossAxisSpacing: 5.0,
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   Padding(
                     padding: EdgeInsets.only(

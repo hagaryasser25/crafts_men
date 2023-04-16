@@ -16,16 +16,14 @@ import 'package:image_picker/image_picker.dart';
 import '../models/users_model.dart';
 
 class AddService extends StatefulWidget {
-  List<String> keyslist = [];
   static const routeName = '/addService';
-   AddService({required this.keyslist});
+   AddService({super.key});
 
   @override
   State<AddService> createState() => _AddServiceState();
 }
 
 class _AddServiceState extends State<AddService> {
-  String dropdownValue = 'سباكة';
   String imageUrl = '';
   File? image;
   var nameController = TextEditingController();
@@ -203,55 +201,7 @@ class _AddServiceState extends State<AddService> {
                       ],
                     ),
                   ),
-                  SizedBox(
-                    height: 20.h,
-                  ),
-                  DecoratedBox(
-                    decoration: ShapeDecoration(
-                      shape: OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Color.fromARGB(255, 183, 183, 183),
-                            width: 2.0),
-                      ),
-                    ),
-                    child: DropdownButton<String>(
-                      isExpanded: true,
-                      underline: SizedBox(),
-
-                      // Step 3.
-                      value: dropdownValue,
-                      icon: Padding(
-                        padding: EdgeInsets.only(right: 5),
-                        child: Icon(Icons.arrow_drop_down,
-                            color: Color.fromARGB(255, 119, 118, 118)),
-                      ),
-
-                      // Step 4.
-                      items: widget.keyslist
-                      .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                              right: 5,
-                            ),
-                            child: Text(
-                              value,
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  color: Color.fromARGB(255, 119, 118, 118)),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                      // Step 5.
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          dropdownValue = newValue!;
-                        });
-                      },
-                    ),
-                  ),
+                
                   SizedBox(
                     height: 20.h,
                   ),
@@ -297,7 +247,6 @@ class _AddServiceState extends State<AddService> {
                         primary: Colors.deepPurple,
                       ),
                       onPressed: () async {
-                        String type = dropdownValue;
                         String name = nameController.text.trim();
                         String price = priceController.text.trim();
                         int rating = 3;
@@ -318,6 +267,7 @@ class _AddServiceState extends State<AddService> {
                           return;
                         }
 
+
                         if (imageUrl.isEmpty) {
                           CherryToast.info(
                             title: Text('ادخل الصورة'),
@@ -325,6 +275,7 @@ class _AddServiceState extends State<AddService> {
                           ).show(context);
                           return;
                         }
+                        
 
 
                         User? user = FirebaseAuth.instance.currentUser;
@@ -337,13 +288,12 @@ class _AddServiceState extends State<AddService> {
                               .instance
                               .reference()
                               .child('services')
-                              .child('$type');
+                              .child(uid);
 
                           String? id = companyRef.push().key;
 
                           await companyRef.child(id!).set({
                             'id': id,
-                            'type': type,
                             'serviceImage': imageUrl,
                             'serviceName': name,
                             'servicePrice': price,

@@ -1,11 +1,8 @@
 import 'package:crafts_men/pages/auth/login_screen.dart';
 import 'package:crafts_men/pages/models/workerreplay_model.dart';
-import 'package:crafts_men/pages/models/workers_model.dart';
-import 'package:crafts_men/pages/user/make-request.dart';
 import 'package:crafts_men/pages/user/send_complain.dart';
 import 'package:crafts_men/pages/user/user_replays.dart';
 import 'package:crafts_men/pages/user/worker_details.dart';
-import 'package:crafts_men/pages/worker/add_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -15,7 +12,6 @@ import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_custom_clippers/flutter_custom_clippers.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:staggered_grid_view_flutter/widgets/staggered_grid_view.dart';
 import 'package:staggered_grid_view_flutter/widgets/staggered_tile.dart';
 
@@ -36,6 +32,7 @@ class _UserHomeState extends State<UserHome>
   late FirebaseDatabase database;
   late FirebaseApp app;
   List<CraftsMenV> menList = [];
+  List<CraftsMenV> searchList = [];
   List<WorkerReplays> replaysList = [];
   List<CraftsMenV> menList2 = [];
   List<String> keyslist = [];
@@ -78,15 +75,15 @@ class _UserHomeState extends State<UserHome>
     });
   }
 
-  @override
   void fetchCraftsMen() async {
     app = await Firebase.initializeApp();
     database = FirebaseDatabase(app: app);
-    base = database.reference().child("craftsMen").child("$dropdownValue");
+    base = database.reference().child("craftsMen");
     base.onChildAdded.listen((event) {
       print(event.snapshot.value);
       CraftsMenV p = CraftsMenV.fromJson(event.snapshot.value);
       menList.add(p);
+      searchList.add(p);
       keyslist.add(event.snapshot.key.toString());
       print(keyslist);
       setState(() {});
@@ -161,174 +158,145 @@ class _UserHomeState extends State<UserHome>
                     child: Column(
                       children: [
                         SizedBox(
-                          height: 15.h,
+                          height: 10.h,
                         ),
-                        DecoratedBox(
-                          decoration: ShapeDecoration(
-                            shape: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                  color: Color.fromARGB(255, 183, 183, 183),
-                                  width: 2.0),
-                            ),
+                        TextField(
+                          style: const TextStyle(
+                            fontSize: 15.0,
                           ),
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            underline: SizedBox(),
-
-                            // Step 3.
-                            value: dropdownValue,
-                            icon: Padding(
-                              padding: EdgeInsets.only(right: 5),
-                              child: Icon(Icons.arrow_drop_down,
-                                  color: Color.fromARGB(255, 119, 118, 118)),
-                            ),
-
-                            // Step 4.
-                            items: keyslist2
-                                .map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Padding(
-                                  padding: EdgeInsets.only(
-                                    right: 5,
-                                  ),
-                                  child: Text(
-                                    value,
-                                    style: TextStyle(
-                                        fontSize: 18,
-                                        color:
-                                            Color.fromARGB(255, 119, 118, 118)),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                            // Step 5.
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                dropdownValue = newValue!;
-                                menList.clear();
-                                fetchCraftsMen();
-                              });
-                            },
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: 'بحث عن حرفة',
                           ),
+                          onChanged: (char) {
+                            setState(() {
+                              if (char.isEmpty) {
+                                setState(() {
+                                  menList = searchList;
+                                });
+                              } else {
+                                menList = [];
+                                for (CraftsMenV model in searchList) {
+                                  if (model.type!.contains(char)) {
+                                    menList.add(model);
+                                  }
+                                }
+                                setState(() {});
+                              }
+                            });
+                          },
                         ),
                         SizedBox(
                           height: 10.h,
                         ),
-                        Container(
-                          width: double.infinity,
-                          height: 300,
-                          child: StaggeredGridView.countBuilder(
-                            padding: EdgeInsets.only(
-                              top: 20.h,
-                              left: 15.w,
-                              right: 15.w,
-                              bottom: 15.h,
-                            ),
-                            crossAxisCount: 6,
-                            itemCount: menList.length,
-                            itemBuilder: (context, index) {
-                              return Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15.0),
-                                ),
-                                child: Column(children: [
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                      top: 10.h,
-                                    ),
-                                    child: CircleAvatar(
-                                      radius: 37,
-                                      backgroundImage: NetworkImage(
-                                          '${menList[index].imageUrl.toString()}'),
-                                    ),
+                        Expanded(
+                          child: Container(
+                            width: double.infinity,
+                            child: StaggeredGridView.countBuilder(
+                              padding: EdgeInsets.only(
+                                top: 20.h,
+                                left: 15.w,
+                                right: 15.w,
+                                bottom: 15.h,
+                              ),
+                              crossAxisCount: 6,
+                              itemCount: menList.length,
+                              itemBuilder: (context, index) {
+                                return Card(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15.0),
                                   ),
-                                  Text(
-                                    '${menList[index].name.toString()}',
-                                    style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                  SizedBox(
-                                    height: 5.h,
-                                  ),
-                                  Text(
-                                      '${menList[index].phoneNumber.toString()}'),
-                                  SizedBox(
-                                    height: 5.h,
-                                  ),
-                                  RatingBar.builder(
-                                    initialRating:
-                                        menList[index].rating!.toDouble(),
-                                    minRating: 1,
-                                    direction: Axis.horizontal,
-                                    allowHalfRating: true,
-                                    itemCount: 5,
-                                    itemSize: 20,
-                                    itemPadding:
-                                        EdgeInsets.symmetric(horizontal: 2.0),
-                                    itemBuilder: (context, _) => Icon(
-                                      Icons.star,
-                                      color: Colors.amber,
-                                    ),
-                                    onRatingUpdate: (double rating2) async {
-                                      rating2.toDouble();
-                                      User? user =
-                                          FirebaseAuth.instance.currentUser;
-
-                                      if (user != null) {
-                                        String uid = user.uid;
-                                        int date = DateTime.now()
-                                            .millisecondsSinceEpoch;
-
-                                        DatabaseReference companyRef =
-                                            FirebaseDatabase.instance
-                                                .reference()
-                                                .child('craftsMen')
-                                                .child('$dropdownValue')
-                                                .child(menList[index]
-                                                    .id
-                                                    .toString());
-
-                                        await companyRef.update({
-                                          'rating': rating2,
-                                        });
-                                      }
-                                    },
-                                  ),
-                                  SizedBox(
-                                    height: 5.h,
-                                  ),
-                                  ConstrainedBox(
-                                    constraints: BoxConstraints.tightFor(
-                                        width: 120.w, height: 40.h),
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        primary: Colors.deepPurple,
+                                  child: Column(children: [
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                        top: 10.h,
                                       ),
-                                      child: Text('سابق الأعمال'),
-                                      onPressed: () async {
-                                        Navigator.push(context,
-                                            MaterialPageRoute(
-                                                builder: (context) {
-                                          return WorkerDetails(
-                                            workerUid:
-                                                menList[index].uid.toString(),
-                                            type:
-                                                menList[index].type.toString(),
-                                          );
-                                        }));
+                                      child: CircleAvatar(
+                                        radius: 37,
+                                        backgroundImage: NetworkImage(
+                                            '${menList[index].imageUrl.toString()}'),
+                                      ),
+                                    ),
+                                    Text(
+                                      '${menList[index].name.toString()}',
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    SizedBox(
+                                      height: 5.h,
+                                    ),
+                                    Text(
+                                        '${menList[index].phoneNumber.toString()}'),
+                                    SizedBox(
+                                      height: 5.h,
+                                    ),
+                                    RatingBar.builder(
+                                      initialRating:
+                                          menList[index].rating!.toDouble(),
+                                      minRating: 1,
+                                      direction: Axis.horizontal,
+                                      allowHalfRating: true,
+                                      itemCount: 5,
+                                      itemSize: 20,
+                                      itemPadding:
+                                          EdgeInsets.symmetric(horizontal: 2.0),
+                                      itemBuilder: (context, _) => Icon(
+                                        Icons.star,
+                                        color: Colors.amber,
+                                      ),
+                                      onRatingUpdate: (double rating2) async {
+                                        rating2.toDouble();
+                                        User? user =
+                                            FirebaseAuth.instance.currentUser;
+
+                                        if (user != null) {
+                                          DatabaseReference companyRef =
+                                              FirebaseDatabase.instance
+                                                  .reference()
+                                                  .child('craftsMen')
+                                                  .child(menList[index]
+                                                      .uid
+                                                      .toString());
+
+                                          await companyRef.update({
+                                            'rating': rating2,
+                                          });
+                                        }
                                       },
                                     ),
-                                  ),
-                                ]),
-                              );
-                            },
-                            staggeredTileBuilder: (int index) =>
-                                new StaggeredTile.count(
-                                    3, index.isEven ? 3 : 3),
-                            mainAxisSpacing: 35.0,
-                            crossAxisSpacing: 5.0,
+                                    SizedBox(
+                                      height: 5.h,
+                                    ),
+                                    ConstrainedBox(
+                                      constraints: BoxConstraints.tightFor(
+                                          width: 120.w, height: 40.h),
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          primary: Colors.deepPurple,
+                                        ),
+                                        child: Text('سابق الأعمال'),
+                                        onPressed: () async {
+                                          Navigator.push(context,
+                                              MaterialPageRoute(
+                                                  builder: (context) {
+                                            return WorkerDetails(
+                                              workerUid:
+                                                  menList[index].uid.toString(),
+                                            );
+                                          }));
+                                        },
+                                      ),
+                                    ),
+                                  ]),
+                                );
+                              },
+                              staggeredTileBuilder: (int index) =>
+                                  new StaggeredTile.count(
+                                      3, index.isEven ? 3 : 3),
+                              mainAxisSpacing: 35.0,
+                              crossAxisSpacing: 5.0,
+                            ),
                           ),
                         ),
                       ],

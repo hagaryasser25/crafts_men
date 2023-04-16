@@ -61,11 +61,10 @@ class _WorkerHomeState extends State<WorkerHome>
     });
   }
 
-  @override
   void fetchWorkers() async {
     app = await Firebase.initializeApp();
     database = FirebaseDatabase(app: app);
-    base = database.reference().child("services").child("$dropdownValue");
+    base = database.reference().child("services").child(FirebaseAuth.instance.currentUser!.uid);
     base.onChildAdded.listen((event) {
       print(event.snapshot.value);
       Workers p = Workers.fromJson(event.snapshot.value);
@@ -76,7 +75,6 @@ class _WorkerHomeState extends State<WorkerHome>
     });
   }
 
-  @override
   void fetchRequests() async {
     app = await Firebase.initializeApp();
     database = FirebaseDatabase(app: app);
@@ -152,58 +150,32 @@ class _WorkerHomeState extends State<WorkerHome>
                       SizedBox(
                         height: 15.h,
                       ),
-                      DecoratedBox(
-                        decoration: ShapeDecoration(
-                          shape: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                color: Color.fromARGB(255, 183, 183, 183),
-                                width: 2.0),
-                          ),
-                        ),
-                        child: DropdownButton<String>(
-                          isExpanded: true,
-                          underline: SizedBox(),
-
-                          // Step 3.
-                          value: dropdownValue,
-                          icon: Padding(
-                            padding: EdgeInsets.only(right: 5),
-                            child: Icon(Icons.arrow_drop_down,
-                                color: Color.fromARGB(255, 119, 118, 118)),
-                          ),
-
-                          // Step 4.
-                          items: keyslist3
-                              .map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Padding(
-                                padding: EdgeInsets.only(
-                                  right: 5,
-                                ),
-                                child: Text(
-                                  value,
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      color:
-                                          Color.fromARGB(255, 119, 118, 118)),
-                                ),
+                      ConstrainedBox(
+                          constraints: BoxConstraints.tightFor(
+                              width: 220.w, height: 50.h),
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              primary: const Color.fromARGB(255, 211, 211, 211),
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(25), // <-- Radius
                               ),
-                            );
-                          }).toList(),
-                          // Step 5.
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              dropdownValue = newValue!;
-                              workersList.clear();
-                              fetchWorkers();
-                            });
-                          },
-                        ),
-                      ),
-                      SizedBox(
-                        height: 10.h,
-                      ),
+                            ),
+                            child: Text(
+                             'أضافة سابقة الأعمال',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.deepPurple,
+                                fontFamily: 'Cairo',
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.push(context,
+                                  MaterialPageRoute(builder: (context) {
+                                return AddService();
+                              }));
+                            },
+                          )),
                       Expanded(
                         flex: 8,
                         child: FutureBuilder(
@@ -212,8 +184,7 @@ class _WorkerHomeState extends State<WorkerHome>
                                 shrinkWrap: true,
                                 itemCount: workersList.length,
                                 itemBuilder: ((context, index) {
-                                  if (FirebaseAuth.instance.currentUser!.uid ==
-                                      workersList[index].uid) {
+                                  
                                     return Column(
                                       children: [
                                         Card(
@@ -274,7 +245,7 @@ class _WorkerHomeState extends State<WorkerHome>
                                                               .reference()
                                                               .child('services')
                                                               .child(
-                                                                  '$dropdownValue')
+                                                                  FirebaseAuth.instance.currentUser!.uid)
                                                               .child(
                                                                   '${workersList[index].id}')
                                                               .remove();
@@ -297,40 +268,12 @@ class _WorkerHomeState extends State<WorkerHome>
                                         ),
                                       ],
                                     );
-                                  } else {
-                                    return Text('');
-                                  }
+                                  
                                 }));
                           }),
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Align(
-                          alignment: Alignment.bottomLeft,
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.push(context,
-                                  MaterialPageRoute(builder: (context) {
-                                return AddService(
-                                  keyslist: keyslist3,
-                                );
-                              }));
-                            },
-                            child: ClipPath(
-                              clipper: StarClipper(10),
-                              child: Container(
-                                color: Colors.deepPurple,
-                                height: 80,
-                                width: 80,
-                                child: Center(
-                                    child:
-                                        Icon(Icons.add, color: Colors.white)),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                     
                     ],
                   ),
                   Padding(
@@ -401,20 +344,22 @@ class _WorkerHomeState extends State<WorkerHome>
                                                   ),
                                                   child: Text('الرد'),
                                                   onPressed: () async {
-                                                    
                                                     Navigator.push(context,
                                                         MaterialPageRoute(
                                                             builder: (context) {
                                                       return SendReplay(
-                                                        userUid: '${requestsList[index].userUid.toString()}',
-                                                        userRequest: '${requestsList[index].description.toString()}',
+                                                        userUid:
+                                                            '${requestsList[index].userUid.toString()}',
+                                                        userRequest:
+                                                            '${requestsList[index].description.toString()}',
                                                       );
                                                     }));
-                                                    
                                                   },
                                                 ),
                                               ),
-                                              SizedBox(width: 140.w,),
+                                              SizedBox(
+                                                width: 140.w,
+                                              ),
                                               InkWell(
                                                 onTap: () {
                                                   Navigator.pushReplacement(
